@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
@@ -63,7 +65,42 @@ func getControlMethod(w http.ResponseWriter, r *http.Request) {
 	south := query["south"]
 	west := query["west"]
 
-	log.Info(north, east, south, west)
+	n, err := strconv.Atoi(north[0])
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("Error")
+		log.Error(err)
+	}
+
+	e, err := strconv.Atoi(east[0])
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("Error")
+		log.Error(err)
+	}
+
+	s, err := strconv.Atoi(south[0])
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("Error")
+		log.Error(err)
+	}
+
+	we, err := strconv.Atoi(west[0])
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode("Error")
+		log.Error(err)
+	}
+
+	totalCPM := calcualteTotalCPM(n, e, s, we)
+	cm1, cm2 := calculateEffcienctControlMethod(totalCPM)
+	if cm2 != nil {
+		json.NewEncoder(w).Encode(cm1.Method + " or " + cm2.Method + " is most efficent")
+	} else {
+		json.NewEncoder(w).Encode(cm1.Method + " is most effiecnt")
+	}
+
 }
 func main() {
 	log = zap.NewExample().Sugar()
