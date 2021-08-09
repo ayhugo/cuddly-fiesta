@@ -1,10 +1,17 @@
 package main
 
-import "fmt"
+import (
+	"net/http"
+
+	"github.com/gorilla/mux"
+	"go.uber.org/zap"
+)
 
 var highThroughput = "High Throughput"
 var mediumTroughput = "Medium Throughput"
 var lowThroughput = "Low Throughput"
+var log *zap.SugaredLogger
+var port = ":8888"
 
 var roundabout = ControlMethod{
 	Method: "Roundabout",
@@ -37,18 +44,32 @@ type ControlMethod struct {
 	Efficent map[string]int
 }
 
-func main() {
-	north := 5
-	east := 5
-	south := 5
-	west := 0
-	totalCPM := calcualteTotalCPM(north, east, south, west)
-	cm1, cm2 := calculateEffcienctControlMethod(totalCPM)
-	fmt.Println(cm1.Method)
-	if cm2 != nil {
-		fmt.Println(cm2.Method)
-	}
+func handleRequests() {
+	r := mux.NewRouter()
+	r.HandleFunc("/", getControlMethod)
 
+	log.Infof("starting running server on port: %s", port)
+	err := http.ListenAndServe(port, r)
+	if err != nil {
+		log.Fatalf("Failed to serve http: %v", err)
+	}
+}
+
+func getControlMethod(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	log.Info("New Request with Query Params: ", query)
+	north := query["north"]
+	east := query["east"]
+	south := query["south"]
+	west := query["west"]
+
+	log.Info(north, east, south, west)
+}
+func main() {
+	log = zap.NewExample().Sugar()
+	defer log.Sync()
+
+	handleRequests()
 }
 
 func calcualteTotalCPM(north int, east int, south int, west int) int {
