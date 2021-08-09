@@ -35,9 +35,9 @@ var stopSigns = ControlMethod{
 var trafficLights = ControlMethod{
 	Method: "Traffic Lights",
 	Efficent: map[string]int{
-		highThroughput:  50,
+		highThroughput:  90,
 		mediumTroughput: 75,
-		lowThroughput:   90,
+		lowThroughput:   50,
 	},
 }
 
@@ -94,13 +94,10 @@ func getControlMethod(w http.ResponseWriter, r *http.Request) {
 	}
 
 	totalCPM := calcualteTotalCPM(n, e, s, we)
-	cm1, cm2 := calculateEffcienctControlMethod(totalCPM)
-	if cm2 != nil {
-		json.NewEncoder(w).Encode(cm1.Method + " or " + cm2.Method + " is most efficent")
-	} else {
-		json.NewEncoder(w).Encode(cm1.Method + " is most effiecnt")
-	}
+	cm1 := calculateEffcienctControlMethod(totalCPM)
 
+	log.Info(cm1.Method + " is recommeded")
+	json.NewEncoder(w).Encode(cm1.Method + " is recommeded")
 }
 func main() {
 	log = zap.NewExample().Sugar()
@@ -113,7 +110,7 @@ func calcualteTotalCPM(north int, east int, south int, west int) int {
 	return north + east + south + west
 }
 
-func calculateEffcienctControlMethod(totalCPM int) (*ControlMethod, *ControlMethod) {
+func calculateEffcienctControlMethod(totalCPM int) ControlMethod {
 	var cpmString string
 	if totalCPM >= 20 {
 		cpmString = highThroughput
@@ -128,24 +125,22 @@ func calculateEffcienctControlMethod(totalCPM int) (*ControlMethod, *ControlMeth
 		stopSigns,
 		trafficLights,
 	}
-
+	log.Info(cpmString)
 	return findMostEfficent(controlMethods, cpmString)
 }
 
-func findMostEfficent(controlMethods []ControlMethod, s string) (*ControlMethod, *ControlMethod) {
-	var temp int
-	bestCM := &ControlMethod{}
-	secondCM := &ControlMethod{}
+func findMostEfficent(controlMethods []ControlMethod, s string) ControlMethod {
+	temp := 0
+	var bestCM ControlMethod
 	for _, cm := range controlMethods {
+		log.Info(cm.Efficent[s])
 		if cm.Efficent[s] > temp {
+
 			temp = cm.Efficent[s]
-			bestCM.Method = cm.Method
 			bestCM.Efficent = cm.Efficent
-		} else if cm.Efficent[s] == temp {
-			secondCM.Method = cm.Method
-			secondCM.Efficent = cm.Efficent
+			bestCM.Method = cm.Method
 		}
 	}
 
-	return bestCM, secondCM
+	return bestCM
 }
